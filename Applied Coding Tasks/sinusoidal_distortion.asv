@@ -1,0 +1,98 @@
+% Define the distortion functions
+
+% 1. Sinusoidal distortion function
+function distorted_signal = sinusoidal_distortion(input_signal, distortion_factor)
+    distorted_signal = sin(distortion_factor * input_signal);
+end
+
+% 2. Soft clipping distortion function
+function distorted_signal = soft_clipping_distortion(input_signal, threshold)
+    distorted_signal = 2/pi * atan(input_signal ./ threshold);
+end
+
+% Generate the chirp signal (assuming the previous code has been executed)
+% Sampling frequency
+Fs = 44100; % Adjust according to your requirements
+% Duration of the chirp signal
+t = 0:1/Fs:2; 
+% Define the chirp parameters
+f0 = 1000;          % Starting frequency (Hz)
+f1 = Fs/2 - 100;    % Ending frequency (Hz) - Close to Nyquist Frequency
+t1 = 2;             % Duration of the chirp (s)
+% Generate the chirp signal
+chirp_signal = chirp(t, f0, t1, f1);
+
+% Define distortion factors and thresholds
+distortion_factor_sin = 10; % Adjust to control the amount of distortion
+threshold_soft_clip = 0.5; % Adjust to control the soft clipping distortion
+
+% Apply sinusoidal distortion to the chirp signal
+distorted_signal_sin = sinusoidal_distortion(chirp_signal, distortion_factor_sin);
+
+% Apply soft clipping distortion to the chirp signal
+distorted_signal_soft_clip = soft_clipping_distortion(chirp_signal, threshold_soft_clip);
+
+% Plot the original chirp signal and the distorted signals
+figure;
+subplot(3,1,1);
+plot(t, chirp_signal);
+title('Original Chirp Signal');
+xlabel('Time (s)');
+ylabel('Amplitude');
+
+subplot(3,1,2);
+plot(t, distorted_signal_sin);
+title('Chirp Signal with Sinusoidal Distortion');
+xlabel('Time (s)');
+ylabel('Amplitude');
+
+subplot(3,1,3);
+plot(t, distorted_signal_soft_clip);
+title('Chirp Signal with Soft Clipping Distortion');
+xlabel('Time (s)');
+ylabel('Amplitude');
+
+% Combine the distorted signals
+combined_signal = distorted_signal_sin + distorted_signal_soft_clip;
+
+% Normalize the combined signal
+max_amplitude = max(abs(combined_signal));
+normalized_signal = combined_signal / max_amplitude;
+
+% Plot the combined and normalized signal
+figure;
+plot(t, normalized_signal);
+title('Combined and Normalized Distorted Signal');
+xlabel('Time (s)');
+ylabel('Amplitude');
+
+% Parameters for STFT calculation
+window_length = 1024;  % Length of the window for STFT
+overlap_length = 512;  % Length of overlap between consecutive windows
+
+% Calculate STFT for clean chirp signal
+[~, f_clean, t_clean, S_clean] = spectrogram(chirp_signal, window_length, overlap_length, [], Fs);
+
+% Calculate STFT for combined and normalized distorted signal
+[~, f_distorted, t_distorted, S_distorted] = spectrogram(normalized_signal, window_length, overlap_length, [], Fs);
+
+% Plot STFT for clean chirp signal
+figure;
+subplot(2, 1, 1);
+imagesc(t_clean, f_clean, 10*log10(abs(S_clean)));
+axis xy;
+colormap jet;
+colorbar;
+title('STFT of Clean Chirp Signal');
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+
+% Plot STFT for combined and normalized distorted signal
+subplot(2, 1, 2);
+imagesc(t_distorted, f_distorted, 10*log10(abs(S_distorted)));
+axis xy;
+colormap jet;
+colorbar;
+title('STFT of Distorted Chirp Signal');
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
